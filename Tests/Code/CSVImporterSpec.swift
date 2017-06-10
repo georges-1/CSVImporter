@@ -42,9 +42,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             if let path = path {
                 let importer = CSVImporter<[String]>(path: path)
 
-                importer.startImportingRecords { recordValues -> [String] in
-                    return recordValues
-                }.onFail {
+                importer.startImportingRecords { $0 }.onFail {
                     print("Did fail")
                 }.onProgress { importedDataLinesCount in
                     print("Progress: \(importedDataLinesCount)")
@@ -76,9 +74,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             if let path = path {
                 let importer = CSVImporter<[String]>(path: path, delimiter: ";")
 
-                importer.startImportingRecords { recordValues -> [String] in
-                    return recordValues
-                }.onFail {
+                importer.startImportingRecords { $0 }.onFail {
                     print("Did fail")
                 }.onProgress { importedDataLinesCount in
                     print("Progress: \(importedDataLinesCount)")
@@ -109,7 +105,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
                 importer.startImportingRecords(structure: { (headerValues) -> Void in
                     print(headerValues)
-                }, recordMapper: { (recordValues) -> [String : String] in
+                }, recordMapper: { (recordValues) -> [String: String] in
                     return recordValues
                 }).onFail {
                     print("Did fail")
@@ -129,17 +125,21 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             let path = Bundle(for: CSVImporterSpec.self).path(forResource: "Teams", ofType: "csv")
             var recordValues: [[String: String]]?
 
+            let structure: ([String]) -> Void = { (headerValues) -> Void in
+                print(headerValues)
+            }
+
+            let recordMapper: ([String: String]) -> [String: String] = { (recordValues) -> [String: String] in
+                return recordValues
+            }
+
             if let path = path {
                 let importer = CSVImporter<[String: String]>(path: path)
-                recordValues = importer.importRecords(structure: { (headerValues) -> Void in
-                    print(headerValues)
-                }, recordMapper: { (recordValues) -> [String : String] in
-                    return recordValues
-                })
+                recordValues = importer.importRecords(structure: structure, recordMapper: recordMapper)
             }
 
             expect(recordValues).notTo(beNil())
-            expect(recordValues!.first!).to(equal(self.validTeamsFirstRecord()))
+            expect(recordValues!.first!) == self.validTeamsFirstRecord()
         }
 
         it("imports data from CSV file content string with headers") {
@@ -152,7 +152,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
             importer.startImportingRecords(structure: { (headerValues) -> Void in
                 print(headerValues)
-            }, recordMapper: { (recordValues) -> [String : String] in
+            }, recordMapper: { (recordValues) -> [String: String] in
                 return recordValues
             }).onFail {
                 print("Did fail")
@@ -177,9 +177,11 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 let structure: ([String]) -> Void = { (headerValues) -> Void in
                     print(headerValues)
                 }
-                let recordMapper: ([String : String]) -> [String : String] = { (recordValues) -> [String : String] in
+
+                let recordMapper: ([String: String]) -> [String: String] = { (recordValues) -> [String: String] in
                     return recordValues
                 }
+
                 importer.startImportingRecords(structure: structure, recordMapper: recordMapper).onFail {
                     print("Did fail")
                 }.onFinish { importedRecords in
@@ -199,11 +201,15 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             if let path = path {
                 let importer = CSVImporter<[String: String]>(path: path, lineEnding: .newLine)
 
-                importer.startImportingRecords(structure: { (headerValues) -> Void in
+                let recordMapper: ([String: String]) -> [String: String] = { (recordValues) -> [String: String] in
+                    return recordValues
+                }
+
+                let structure: ([String]) -> Void = { (headerValues) -> Void in
                     print(headerValues)
-                }, recordMapper: { (recordValues) -> [String : String] in
-                        return recordValues
-                }).onFail {
+                }
+
+                importer.startImportingRecords(structure: structure, recordMapper: recordMapper).onFail {
                     print("Did fail")
                 }.onFinish { importedRecords in
                     print("Did finish import, first array: \(String(describing: importedRecords.first))")
@@ -226,7 +232,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
                 importer.startImportingRecords(structure: { (headerValues) -> Void in
                     print(headerValues)
-                }, recordMapper: { (recordValues) -> [String : String] in
+                }, recordMapper: { (recordValues) -> [String: String] in
                     return recordValues
                 }).onFail {
                     print("Did fail")
@@ -256,7 +262,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
                 importer.startImportingRecords(structure: { (headerValues) -> Void in
                     print(headerValues)
-                }, recordMapper: { (recordValues) -> [String : String] in
+                }, recordMapper: { (recordValues) -> [String: String] in
                     return recordValues
                 }).onFail {
                     print("Did fail")
@@ -276,10 +282,9 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
             if let url = url {
                 if let importer = CSVImporter<[String: String]>(url: url) {
-
                     importer.startImportingRecords(structure: { (headerValues) -> Void in
                         print(headerValues)
-                    }, recordMapper: { (recordValues) -> [String : String] in
+                    }, recordMapper: { (recordValues) -> [String: String] in
                         return recordValues
                     }).onFail {
                         print("Did fail")
@@ -303,10 +308,9 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
             if let url = url {
                 if let importer = CSVImporter<[String: String]>(url: url) {
-
                     importer.startImportingRecords(structure: { (headerValues) -> Void in
                         print(headerValues)
-                    }, recordMapper: { (recordValues) -> [String : String] in
+                    }, recordMapper: { (recordValues) -> [String: String] in
                         return recordValues
                     }).onFail {
                         print("Did fail")
@@ -331,10 +335,9 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
             if let url = url {
                 if let importer = CSVImporter<[String: String]>(url: url) {
-
                     importer.startImportingRecords(structure: { (headerValues) -> Void in
                         print(headerValues)
-                    }, recordMapper: { (recordValues) -> [String : String] in
+                    }, recordMapper: { (recordValues) -> [String: String] in
                         return recordValues
                     }).onFail {
                         print("Did fail")
@@ -357,10 +360,9 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
 
             if let url = url {
                 if let importer = CSVImporter<[String: String]>(url: url) {
-
                     importer.startImportingRecords(structure: { (headerValues) -> Void in
                         print(headerValues)
-                    }, recordMapper: { (recordValues) -> [String : String] in
+                    }, recordMapper: { (recordValues) -> [String: String] in
                         return recordValues
                     }).onFail {
                         print("Did fail")
@@ -439,5 +441,4 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             try FileManager.default.removeItem(atPath: path)
         } catch { }
     }
-
 }
