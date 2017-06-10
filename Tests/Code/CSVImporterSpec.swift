@@ -16,8 +16,7 @@ import Nimble
 @testable import CSVImporter
 
 class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
-    override func spec() { // swiftlint:disable:this function_body_length
-
+    override func spec() { // swiftlint:disable:this function_body_length cyclomatic_complexity
         it("calls onFail block with wrong path") {
             let invalidPath = "invalid/path"
 
@@ -30,7 +29,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             }.onProgress { importedDataLinesCount in
                 print("Progress: \(importedDataLinesCount)")
             }.onFinish { importedRecords in
-                print("Did finish import, first array: \(importedRecords.first)")
+                print("Did finish import, first array: \(String(describing: importedRecords.first))")
             }
 
             expect(didFail).toEventually(beTrue(), timeout: 5)
@@ -50,7 +49,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 }.onProgress { importedDataLinesCount in
                     print("Progress: \(importedDataLinesCount)")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -84,7 +83,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 }.onProgress { importedDataLinesCount in
                     print("Progress: \(importedDataLinesCount)")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -117,7 +116,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 }.onProgress { importedDataLinesCount in
                     print("Progress: \(importedDataLinesCount)")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -160,7 +159,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             }.onProgress { importedDataLinesCount in
                 print("Progress: \(importedDataLinesCount)")
             }.onFinish { importedRecords in
-                print("Did finish import, first array: \(importedRecords.first)")
+                print("Did finish import, first array: \(String(describing: importedRecords.first))")
                 recordValues = importedRecords
             }
 
@@ -173,16 +172,18 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             var recordValues: [[String: String]]?
 
             if let path = path {
-                let importer = CSVImporter<[String: String]>(path: path, lineEnding: .crlf)
+                let importer = CSVImporter<[String: String]>(path: path, lineEnding: .carriageReturnLineFeed)
 
-                importer.startImportingRecords(structure: { (headerValues) -> Void in
+                let structure: ([String]) -> Void = { (headerValues) -> Void in
                     print(headerValues)
-                }, recordMapper: { (recordValues) -> [String : String] in
-                        return recordValues
-                }).onFail {
+                }
+                let recordMapper: ([String : String]) -> [String : String] = { (recordValues) -> [String : String] in
+                    return recordValues
+                }
+                importer.startImportingRecords(structure: structure, recordMapper: recordMapper).onFail {
                     print("Did fail")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -192,11 +193,11 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
         }
 
         it("imports data from CSV file with headers Specifying lineEnding NL") {
-            let path = self.convertTeamsLineEndingTo(.nl)
+            let path = self.convertTeamsLineEndingTo(.newLine)
             var recordValues: [[String: String]]?
 
             if let path = path {
-                let importer = CSVImporter<[String: String]>(path: path, lineEnding: .nl)
+                let importer = CSVImporter<[String: String]>(path: path, lineEnding: .newLine)
 
                 importer.startImportingRecords(structure: { (headerValues) -> Void in
                     print(headerValues)
@@ -205,7 +206,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 }).onFail {
                     print("Did fail")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -217,7 +218,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
         }
 
         it("imports data from CSV file with headers with lineEnding CR Sniffs lineEnding") {
-            let path = self.convertTeamsLineEndingTo(.cr)
+            let path = self.convertTeamsLineEndingTo(.carriageReturn)
             var recordValues: [[String: String]]?
 
             if let path = path {
@@ -230,7 +231,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 }).onFail {
                     print("Did fail")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -248,10 +249,10 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             if let path = path {
                 do {
                     let string = try String(contentsOfFile: path)
-                    expect(string.contains(LineEnding.crlf.rawValue)).to(beTrue())
+                    expect(string.contains(LineEnding.carriageReturnLineFeed.rawValue)).to(beTrue())
                 } catch { }
 
-                let importer = CSVImporter<[String: String]>(path: path, lineEnding: .nl)    // wrong
+                let importer = CSVImporter<[String: String]>(path: path, lineEnding: .newLine)    // wrong
 
                 importer.startImportingRecords(structure: { (headerValues) -> Void in
                     print(headerValues)
@@ -260,7 +261,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                 }).onFail {
                     print("Did fail")
                 }.onFinish { importedRecords in
-                    print("Did finish import, first array: \(importedRecords.first)")
+                    print("Did finish import, first array: \(String(describing: importedRecords.first))")
                     recordValues = importedRecords
                 }
             }
@@ -285,7 +286,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                     }.onProgress { importedDataLinesCount in
                         print("Progress: \(importedDataLinesCount)")
                     }.onFinish { importedRecords in
-                        print("Did finish import, first array: \(importedRecords.first)")
+                        print("Did finish import, first array: \(String(describing: importedRecords.first))")
                         recordValues = importedRecords
                     }
                 }
@@ -312,7 +313,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                     }.onProgress { importedDataLinesCount in
                         print("Progress: \(importedDataLinesCount)")
                     }.onFinish { importedRecords in
-                        print("Did finish import, first array: \(importedRecords.first)")
+                        print("Did finish import, first array: \(String(describing: importedRecords.first))")
                         recordValues = importedRecords
                     }
                 } else {
@@ -340,7 +341,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                     }.onProgress { importedDataLinesCount in
                         print("Progress: \(importedDataLinesCount)")
                     }.onFinish { importedRecords in
-                        print("Did finish import, first array: \(importedRecords.first)")
+                        print("Did finish import, first array: \(String(describing: importedRecords.first))")
                         recordValues = importedRecords
                     }
                 }
@@ -366,7 +367,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
                     }.onProgress { importedDataLinesCount in
                         print("Progress: \(importedDataLinesCount)")
                     }.onFinish { importedRecords in
-                        print("Did finish import, first array: \(importedRecords.first)")
+                        print("Did finish import, first array: \(String(describing: importedRecords.first))")
                         recordValues = importedRecords
                     }
                 } else {
@@ -382,7 +383,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             var recordValues: [[String: String]]?
 
             guard let url = Bundle(for: CSVImporterSpec.self).url(forResource: "UTF16_Example.csv", withExtension: nil),
-                let importer = CSVImporter<[String: String]>(url: url, lineEnding: .crlf, encoding: .utf16LittleEndian) else { fail(); return }
+                let importer = CSVImporter<[String: String]>(url: url, lineEnding: .carriageReturnLineFeed, encoding: .utf16LittleEndian) else { fail(); return }
 
             importer.startImportingRecords(structure: { (headerValues) -> Void in
                 print(headerValues)
@@ -393,7 +394,7 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
             }.onProgress { importedDataLinesCount in
                 print("Progress: \(importedDataLinesCount)")
             }.onFinish { importedRecords in
-                print("Did finish import, first array: \(importedRecords.first)")
+                print("Did finish import, first array: \(String(describing: importedRecords.first))")
                 recordValues = importedRecords
             }
 
@@ -414,10 +415,11 @@ class CSVImporterSpec: QuickSpec { // swiftlint:disable:this type_body_length
         if let path = pathForResourceFile("Teams.csv") {
             do {
                 let string = try String(contentsOfFile: path)
-                expect(string.contains(LineEnding.crlf.rawValue)).to(beTrue())
-                let crString = string.replacingOccurrences(of: LineEnding.crlf.rawValue, with: lineEnding.rawValue)
+                expect(string.contains(LineEnding.carriageReturnLineFeed.rawValue)).to(beTrue())
+                let crString = string.replacingOccurrences(of: LineEnding.carriageReturnLineFeed.rawValue, with: lineEnding.rawValue)
                 let tempPath = (NSTemporaryDirectory() as NSString).appendingPathComponent("TeamsNewLineEnding.csv")
                 try crString.write(toFile: tempPath, atomically: false, encoding: .utf8)
+
                 return tempPath
             } catch {
                 print(error.localizedDescription)
